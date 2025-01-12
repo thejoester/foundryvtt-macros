@@ -1,24 +1,30 @@
 /* 
-**************************************************************
+******************************************************************
     Macro Title: Prompt Class DC Save [PF2E]
     Foundry Version: 12
     System: PF2E
     Last updated 12-Nov-2024
     
     Description:
-    This macro allows a GM or player to prompt a selected target to make a saving throw 
-    (Will, Reflex, or Fortitude) against the Class DC of a selected token’s actor. When 
-    the macro is executed, a dialog box appears allowing the user to choose the save type 
-    (Will, Reflex, or Fortitude) that the target must attempt. A clickable message is then 
-    generated in the chat, which, when clicked, rolls the selected save against the Class DC.
+    This macro allows a GM or player to prompt a selected target 
+	to make a saving throw (Will, Reflex, or Fortitude) against 
+	the Class DC of a selected token’s actor. When the macro is 
+	executed, a dialog box appears allowing the user to choose the 
+	save type (Will, Reflex, or Fortitude) that the target must 
+	attempt. A clickable message is then generated in the chat, 
+	which, when clicked, rolls the selected save against the 
+	Class DC.
     
     Usage:
     - Select a token representing the actor initiating the save.
-    - Target another token to act as the defender who will roll the save.
-    - Run this macro to open a dialog box prompting you to select the save type.
-    - A clickable message appears in the chat, allowing the target to roll the specified save.
-    - The roll result, along with a comparison against the initiating actor’s Class DC, 
-      will appear in the chat.
+    - Target another token to act as the defender who will roll 
+	the save.
+    - Run this macro to open a dialog box prompting you to select 
+	the save type.
+    - A clickable message appears in the chat, allowing the target 
+	to roll the specified save.
+    - The roll result, along with a comparison against the 
+	initiating actor’s Class DC, will appear in the chat.
     
     Requirements:
     - A token must be selected as the initiating actor.
@@ -29,10 +35,11 @@
     License: MIT License
     
     Example Use Case:
-    Useful for Game Masters or players running a combat or encounter where one character’s 
-    ability prompts another character to make a save against their Class DC (e.g., spells, 
+    Useful for Game Masters or players running a combat or 
+	encounter where one character’s ability prompts another 
+	character to make a save against their Class DC (e.g., spells, 
     abilities that prompt saving throws).
-**************************************************************
+******************************************************************
 */
 
 // Ensure a token is selected

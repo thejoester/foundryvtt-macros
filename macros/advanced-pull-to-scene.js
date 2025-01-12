@@ -1,18 +1,18 @@
 /*
-********************************************
+******************************************************************
 
 	Macro Title: Advanced Pull to Scene
 	Author: TheJoester (https://github.com/thejoester)
 	Description:
-	This macro allows a FoundryVTT GM to pull selected connected users to a chosen scene.
-	It presents a dialog box listing all connected users with checkboxes, allowing the GM
-	to select specific users. The dialog also includes a dropdown menu listing all available
-	scenes, from which the GM can choose the target scene to pull users to.
+	This macro allows a FoundryVTT GM to pull selected connected 
+	users to a chosen scene. It presents a dialog box listing all 
+	connected users with checkboxes, allowing the GM to select 
+	specific users. The dialog also includes a dropdown menu listing 
+	all available scenes, from which the GM can choose the target 
+	scene to pull users to.
 
-	When the "Pull to Scene" button is clicked, the selected users are transported to the
-	selected scene.
-
-	Usage: Run this macro as a GM in FoundryVTT.
+	When the "Pull to Scene" button is clicked, the selected users 
+	are transported to the selected scene.
 
 	Foundry Version: 12
 	Last updated 12-Nov-2024
@@ -20,7 +20,7 @@
 	Author: TheJoester (https://github.com/thejoester)
 	License: MIT License
 
-********************************************
+******************************************************************
 */
 
 

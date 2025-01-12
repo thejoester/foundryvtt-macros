@@ -1,12 +1,16 @@
-/**
-Everlight Crystal Toggle Macro
+ /* 
+******************************************************************
+    Macro Title: Everlight Crystal Toggle Macro
+    Foundry Version: 12
+    System: PF2E
+    Last updated 12-Nov-2024
+    
+    Description: 
+	This macro toggles the equipped state of the "Everlight Crystal" 
+	item in the inventory of the currently selected token's actor. 
 
-This macro toggles the equipped state of the "Everlight Crystal" item in the inventory 
-of the currently selected token's actor. It performs the following actions:
-
-If no token is selected or the item is not found, an error message is displayed in the UI and logged.
-
- **/
+******************************************************************
+*/
 
 (async () => {
   // Get the selected token
