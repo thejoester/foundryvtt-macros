@@ -1,4 +1,21 @@
-// Function to update selected walls
+/*
+******************************************************************
+
+	Macro Title: Change Wall Type
+	Author: TheJoester (https://github.com/thejoester)
+	Description:
+	This macro opens a dialog that lets you quickly change
+ 	wall type of selected walls. 
+
+	Foundry Version: 12
+	Last updated 25-Jan-2025
+
+	Author: TheJoester (https://github.com/thejoester)
+	License: MIT License
+
+******************************************************************
+*/
+
 const updateWalls = (updates) => {
   const selectedWalls = canvas.walls.controlled;
   if (selectedWalls.length === 0) {
