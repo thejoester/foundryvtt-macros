@@ -1,21 +1,4 @@
-/*
-******************************************************************
-
-	Macro Title: Change Wall Type
-	Author: TheJoester (https://github.com/thejoester)
-	Description:
-	This macro opens a dialog that lets you quickly change
- 	wall type of selected walls. 
-
-	Foundry Version: 12
-	Last updated 25-Jan-2025
-
-	Author: TheJoester (https://github.com/thejoester)
-	License: MIT License
-
-******************************************************************
-*/
-
+// Function to update selected walls
 const updateWalls = (updates) => {
   const selectedWalls = canvas.walls.controlled;
   if (selectedWalls.length === 0) {
@@ -37,6 +20,7 @@ new Dialog({
     <div style="display: flex; gap: 5px;">
       <button id="normal">Normal</button>
       <button id="invisible">Invisible</button>
+		<button id="ethereal">Ethereal</button>
       <button id="terrain">Terrain</button>
     </div>
 	 <br>
@@ -62,7 +46,7 @@ new Dialog({
     html.find("#normal").click(() =>
       updateWalls({
         door: CONST.WALL_DOOR_TYPES.NONE,
-        move: CONST.WALL_RESTRICTION_TYPES.NORMAL,
+        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
         light: CONST.WALL_RESTRICTION_TYPES.NORMAL,
         sight: CONST.WALL_RESTRICTION_TYPES.NORMAL,
         sound: CONST.WALL_RESTRICTION_TYPES.NORMAL,
@@ -74,9 +58,21 @@ new Dialog({
     html.find("#invisible").click(() =>
       updateWalls({
         door: CONST.WALL_DOOR_TYPES.NONE,
-        move: CONST.WALL_RESTRICTION_TYPES.NORMAL,
+        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
         light: CONST.WALL_SENSE_TYPES.NONE,
         sight: CONST.WALL_SENSE_TYPES.NONE,
+        sound: CONST.WALL_SENSE_TYPES.NONE,
+        dir: CONST.WALL_DIRECTIONS.BOTH,
+        ds: CONST.WALL_DOOR_STATES.CLOSED,
+      })
+    );
+
+   html.find("#ethereal").click(() =>
+      updateWalls({
+        door: CONST.WALL_DOOR_TYPES.NONE,
+        move: CONST.WALL_MOVEMENT_TYPES.NONE,
+        light: CONST.WALL_SENSE_TYPES.NORMAL,
+        sight: CONST.WALL_SENSE_TYPES.NORMAL,
         sound: CONST.WALL_SENSE_TYPES.NONE,
         dir: CONST.WALL_DIRECTIONS.BOTH,
         ds: CONST.WALL_DOOR_STATES.CLOSED,
@@ -86,7 +82,7 @@ new Dialog({
     html.find("#terrain").click(() =>
       updateWalls({
         door: CONST.WALL_DOOR_TYPES.NONE,
-        move: CONST.WALL_RESTRICTION_TYPES.NORMAL,
+        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
         light: CONST.WALL_SENSE_TYPES.LIMITED,
         sight: CONST.WALL_SENSE_TYPES.LIMITED,
         sound: CONST.WALL_SENSE_TYPES.LIMITED,
@@ -111,10 +107,10 @@ new Dialog({
       updateWalls({
         door: CONST.WALL_DOOR_TYPES.DOOR,
         ds: CONST.WALL_DOOR_STATES.CLOSED,
-        move: CONST.WALL_RESTRICTION_TYPES.NONE,
-        light: CONST.WALL_RESTRICTION_TYPES.NONE,
-        sight: CONST.WALL_RESTRICTION_TYPES.NONE,
-        sound: CONST.WALL_RESTRICTION_TYPES.NONE,
+        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
+        light: CONST.WALL_SENSE_TYPES.NORMAL,
+        sight: CONST.WALL_SENSE_TYPES.NORMAL,
+        sound: CONST.WALL_SENSE_TYPES.NORMAL,
       })
     );
 
@@ -122,10 +118,10 @@ new Dialog({
       updateWalls({
         door: CONST.WALL_DOOR_TYPES.DOOR,
         ds: CONST.WALL_DOOR_STATES.OPEN,
-        move: CONST.WALL_RESTRICTION_TYPES.NONE,
-        light: CONST.WALL_RESTRICTION_TYPES.NONE,
-        sight: CONST.WALL_RESTRICTION_TYPES.NONE,
-        sound: CONST.WALL_RESTRICTION_TYPES.NONE,
+        move: CONST.WALL_MOVEMENT_TYPES.NONE,
+        light: CONST.WALL_SENSE_TYPES.NONE,
+        sight: CONST.WALL_SENSE_TYPES.NONE,
+        sound: CONST.WALL_SENSE_TYPES.NONE,
       })
     );
 
@@ -133,10 +129,10 @@ new Dialog({
       updateWalls({
         door: CONST.WALL_DOOR_TYPES.DOOR,
         ds: CONST.WALL_DOOR_STATES.LOCKED,
-        move: CONST.WALL_RESTRICTION_TYPES.NONE,
-        light: CONST.WALL_RESTRICTION_TYPES.NONE,
-        sight: CONST.WALL_RESTRICTION_TYPES.NONE,
-        sound: CONST.WALL_RESTRICTION_TYPES.NONE,
+        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
+        light: CONST.WALL_SENSE_TYPES.NORMAL,
+        sight: CONST.WALL_SENSE_TYPES.NORMAL,
+        sound: CONST.WALL_SENSE_TYPES.NORMAL,
       })
     );
 
@@ -144,10 +140,10 @@ new Dialog({
       updateWalls({
         door: CONST.WALL_DOOR_TYPES.SECRET,
         ds: CONST.WALL_DOOR_STATES.CLOSED,
-        move: CONST.WALL_RESTRICTION_TYPES.NONE,
-        light: CONST.WALL_RESTRICTION_TYPES.NONE,
-        sight: CONST.WALL_RESTRICTION_TYPES.NONE,
-        sound: CONST.WALL_RESTRICTION_TYPES.NONE,
+        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
+        light: CONST.WALL_SENSE_TYPES.NORMAL,
+        sight: CONST.WALL_SENSE_TYPES.NORMAL,
+        sound: CONST.WALL_SENSE_TYPES.NORMAL,
       })
     );
 
