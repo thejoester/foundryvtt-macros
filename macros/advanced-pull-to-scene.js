@@ -1,174 +1,77 @@
-/*
-******************************************************************
-	Macro Title: Change Wall Type
-	Author: TheJoester (https://github.com/thejoester)
-	Description:
-	This macro opens a dialog that lets you quickly change
- 	wall type of selected walls. 
-	Foundry Version: 12
-	Last updated 25-Jan-2025
-	Author: TheJoester (https://github.com/thejoester)
-	License: MIT License
-******************************************************************
-*/
-const updateWalls = (updates) => {
-  const selectedWalls = canvas.walls.controlled;
-  if (selectedWalls.length === 0) {
-    return ui.notifications.warn("No walls selected.");
-  }
+// Get the list of available scenes and connected users
+const scenes = game.scenes.contents;
+const connectedUsers = game.users.contents.filter(user => user.active && user.id !== game.user.id);
 
-  const changes = selectedWalls.map((wall) => ({
-    _id: wall.id,
-    ...updates,
-  }));
-  return canvas.scene.updateEmbeddedDocuments("Wall", changes);
-};
+// Check for no active users
+if (connectedUsers.length === 0) {
+    new Dialog({
+        title: "No Connected Users",
+        content: "<p>No other users are currently connected.</p>",
+        buttons: {
+            ok: { icon: '<i class="fas fa-check"></i>', label: "OK" }
+        }
+    }).render(true);
+    return;
+}
 
-// Dialog for Wall Settings
+// Generate HTML for user checkboxes
+let userOptions = connectedUsers.map(user => `
+    <div>
+        <input type="checkbox" id="${user.id}" name="${user.id}" />
+        <label for="${user.id}">${user.name}</label>
+    </div>
+`).join("");
+
+// Generate HTML for the scene dropdown menu
+let sceneOptions = scenes.map(scene => `
+    <option value="${scene.id}">${scene.name}</option>
+`).join("");
+
+// Create a dialog to display user options, scene dropdown, and pull button
 new Dialog({
-  title: "Wall Settings",
-  content: `
-    <h3>Wall</h3>
-    <div style="display: flex; gap: 5px;">
-      <button id="normal">Normal</button>
-      <button id="invisible">Invisible</button>
-		<button id="ethereal">Ethereal</button>
-      <button id="terrain">Terrain</button>
-    </div>
-	 <br>
-    <h3>Wall Direction</h3>
-    <div style="display: flex; gap: 5px;">
-      <button id="both">Both</button>
-      <button id="left">Left</button>
-      <button id="right">Right</button>
-    </div>
-    <br>
-    <h3>Doors</h3>
-    <div style="display: flex; gap: 5px;">
-      <button id="closed_door">Closed</button>
-      <button id="open_door">Open</button>
-      <button id="locked">Locked</button>
-      <button id="secret">Secret</button>
-      <button id="window">Window</button>
-    </div>
-  `,
-  buttons: {},
-  render: (html) => {
-    // Wall types
-    html.find("#normal").click(() =>
-      updateWalls({
-        door: CONST.WALL_DOOR_TYPES.NONE,
-        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
-        light: CONST.WALL_RESTRICTION_TYPES.NORMAL,
-        sight: CONST.WALL_RESTRICTION_TYPES.NORMAL,
-        sound: CONST.WALL_RESTRICTION_TYPES.NORMAL,
-        dir: CONST.WALL_DIRECTIONS.BOTH,
-        ds: CONST.WALL_DOOR_STATES.CLOSED,
-      })
-    );
+    title: "Pull Users to Scene",
+    content: `
+        <form>
+            <p>Select scene to pull users to:</p>
+            <select id="scene-select">${sceneOptions}</select>
+            <br /><br />
+            <p>Select users to pull:</p>
+            ${userOptions}
+            <br />
+        </form>
+    `,
+    buttons: {
+        pull: {
+            icon: '<i class="fas fa-arrows-alt"></i>',
+            label: "Pull to Scene",
+            callback: (html) => {
+                // Get selected users
+                const selectedUserIds = connectedUsers
+                    .filter(user => html.find(`input[name="${user.id}"]`).is(":checked"))
+                    .map(user => user.id);
 
-    html.find("#invisible").click(() =>
-      updateWalls({
-        door: CONST.WALL_DOOR_TYPES.NONE,
-        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
-        light: CONST.WALL_SENSE_TYPES.NONE,
-        sight: CONST.WALL_SENSE_TYPES.NONE,
-        sound: CONST.WALL_SENSE_TYPES.NONE,
-        dir: CONST.WALL_DIRECTIONS.BOTH,
-        ds: CONST.WALL_DOOR_STATES.CLOSED,
-      })
-    );
+                // Get selected scene ID
+                const sceneId = html.find("#scene-select").val();
+                const selectedScene = game.scenes.get(sceneId);
 
-   html.find("#ethereal").click(() =>
-      updateWalls({
-        door: CONST.WALL_DOOR_TYPES.NONE,
-        move: CONST.WALL_MOVEMENT_TYPES.NONE,
-        light: CONST.WALL_SENSE_TYPES.NORMAL,
-        sight: CONST.WALL_SENSE_TYPES.NORMAL,
-        sound: CONST.WALL_SENSE_TYPES.NONE,
-        dir: CONST.WALL_DIRECTIONS.BOTH,
-        ds: CONST.WALL_DOOR_STATES.CLOSED,
-      })
-    );
+                // Check if the scene ID is valid
+                if (!selectedScene) {
+                    ui.notifications.error("Selected scene not found.");
+                    return;
+                }
 
-    html.find("#terrain").click(() =>
-      updateWalls({
-        door: CONST.WALL_DOOR_TYPES.NONE,
-        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
-        light: CONST.WALL_SENSE_TYPES.LIMITED,
-        sight: CONST.WALL_SENSE_TYPES.LIMITED,
-        sound: CONST.WALL_SENSE_TYPES.LIMITED,
-        dir: CONST.WALL_DIRECTIONS.BOTH,
-        ds: CONST.WALL_DOOR_STATES.CLOSED,
-      })
-    );
+                // Pull each selected user to the selected scene
+                selectedUserIds.forEach(userId => {
+                    game.socket.emit("pullToScene", sceneId, userId);
+                });
 
-    // Wall directions
-    html.find("#left").click(() =>
-      updateWalls({ dir: CONST.WALL_DIRECTIONS.LEFT })
-    );
-    html.find("#right").click(() =>
-      updateWalls({ dir: CONST.WALL_DIRECTIONS.RIGHT })
-    );
-    html.find("#both").click(() =>
-      updateWalls({ dir: CONST.WALL_DIRECTIONS.BOTH })
-    );
-
-    // Door types
-    html.find("#closed_door").click(() =>
-      updateWalls({
-        door: CONST.WALL_DOOR_TYPES.DOOR,
-        ds: CONST.WALL_DOOR_STATES.CLOSED,
-        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
-        light: CONST.WALL_SENSE_TYPES.NORMAL,
-        sight: CONST.WALL_SENSE_TYPES.NORMAL,
-        sound: CONST.WALL_SENSE_TYPES.NORMAL,
-      })
-    );
-
-	html.find("#open_door").click(() =>
-      updateWalls({
-        door: CONST.WALL_DOOR_TYPES.DOOR,
-        ds: CONST.WALL_DOOR_STATES.OPEN,
-        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
-        light: CONST.WALL_SENSE_TYPES.NORMAL,
-        sight: CONST.WALL_SENSE_TYPES.NORMAL,
-        sound: CONST.WALL_SENSE_TYPES.NORMAL,
-      })
-    );
-
-    html.find("#locked").click(() =>
-      updateWalls({
-        door: CONST.WALL_DOOR_TYPES.DOOR,
-        ds: CONST.WALL_DOOR_STATES.LOCKED,
-        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
-        light: CONST.WALL_SENSE_TYPES.NORMAL,
-        sight: CONST.WALL_SENSE_TYPES.NORMAL,
-        sound: CONST.WALL_SENSE_TYPES.NORMAL,
-      })
-    );
-
-    html.find("#secret").click(() =>
-      updateWalls({
-        door: CONST.WALL_DOOR_TYPES.SECRET,
-        ds: CONST.WALL_DOOR_STATES.CLOSED,
-        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
-        light: CONST.WALL_SENSE_TYPES.NORMAL,
-        sight: CONST.WALL_SENSE_TYPES.NORMAL,
-        sound: CONST.WALL_SENSE_TYPES.NORMAL,
-      })
-    );
-
-    html.find("#window").click(() =>
-      updateWalls({
-        door: CONST.WALL_DOOR_TYPES.NONE,
-        ds: CONST.WALL_DOOR_STATES.CLOSED,
-        light: CONST.WALL_SENSE_TYPES.PROXIMITY,
-        move: CONST.WALL_MOVEMENT_TYPES.NORMAL,
-        sight: CONST.WALL_SENSE_TYPES.PROXIMITY,
-        sound: CONST.WALL_SENSE_TYPES.NORMAL,
-        threshold: { light: 10, sight: 10, sound: 1, attenuation: true },
-      })
-    );
-  },
+                ui.notifications.info("Selected users pulled to the scene.");
+            }
+        },
+        cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "Cancel"
+        }
+    },
+    default: "pull"
 }).render(true);
