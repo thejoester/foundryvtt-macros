@@ -7,15 +7,13 @@
 	This macro is for players with the Inspiring Marshal Stance from 
 	the Marshall Dedication. 
 	
-	Will roll an easy Diplomacy check for character level of selected
-	token. If the roll is a success, it will apply the "Inspiring 
+	- Prompt for difficulty, defaults to easy
+	- Rolls Diplomacy check based on difficulty for level 
+ 	- If the roll is a success, it will apply the "Inspiring 
 	Marshal Stance" Aura on the player. 
-	
-	- Will check that token was selected and that the character has 
-	Inspiring Marshal Stance feat.
 
-	Foundry Version: 12
-	Last updated 12-Jan-2025
+	Foundry Version: v12 - v13
+	Last updated 16-July-2025
 
 	Author: TheJoester (https://github.com/thejoester)
 	License: MIT License
@@ -24,83 +22,93 @@
 */
 
 (async () => {
-    // Check if a token is selected
-    if (!token) {
-        ui.notifications.warn("Please select a token.");
-        return;
-    }
+  if (!token) {
+    ui.notifications.warn("Please select a token.");
+    return;
+  }
 
-    // Get the actor from the selected token
-    const actor = token.actor;
+  const actor = token.actor;
+  if (!actor) {
+    ui.notifications.error("No actor found for the selected token.");
+    return;
+  }
 
-    if (!actor) {
-        ui.notifications.error("No actor found for the selected token.");
-        return;
-    }
+  const level = actor.system.details.level.value;
+  const dcTable = [14, 15, 16, 18, 19, 20, 22, 23, 24, 26, 27, 28, 30, 31, 32, 34, 35, 36, 38, 39, 40];
+  const baseDC = dcTable[level] || 10;
+  const dcAdjustments = {
+    "Incredibly easy": -10,
+    "Very easy": -5,
+    "Easy": -2,
+    "Hard": 2,
+    "Very hard": 5,
+    "Incredibly hard": 10
+  };
 
-	// Make sure actor has Inspiring Marshal Stance feat
-	hasFeat = actor.itemTypes.feat.some((feat) => feat.slug === 'inspiring-marshal-stance');
-	if (!hasFeat) {
-		ui.notifications.warn(`Actor ${actor.name} does not have Inspiring Marshal Stance feat`);
-		return;
-	}
-	
-    // Get the actor's level
-    const level = actor.system.details.level.value;
+  const difficulties = Object.keys(dcAdjustments);
 
-    // Pathfinder 2E DC progression table for standard checks
-    const standardDCs = [
-        14, 15, 16, 18, 19, 20, 22, 23, 24, 26, 27, 28, 30, 31, 32, 34, 35, 36, 38, 39, 40
-    ];
+  const content = `<form>
+    <div class="form-group">
+      <label>Choose Difficulty:</label>
+      <select id="difficulty" name="difficulty">
+        ${difficulties.map(d => `<option value="${d}" ${d === "Easy" ? "selected" : ""}>${d}</option>`).join("")}
+      </select>
+    </div>
+  </form>`;
 
-    // Determine the DC for the actor's level, adjusted for an "easy" check
-    const standardDC = standardDCs[level] || 10; // Default to 10 if level is out of bounds
-    const easyDC = standardDC - 2;
+  const { result, form } = await Dialog.prompt({
+    title: "Inspiring Marshal Stance",
+    content,
+    label: "Inspiring Marshal Stance",
+    callback: html => ({ result: true, form: html[0] }),
+    rejectClose: false
+  });
 
-    // Get the Diplomacy skill modifier
-    const totalModifier = actor.system.skills.diplomacy.totalModifier;
+  if (!result) return;
 
-    // Roll a d20 and add the totalModifier
-    const roll = new Roll(`1d20 + ${totalModifier}`);
-    await roll.evaluate({ async: true });
+  const difficulty = form.querySelector("#difficulty").value;
+  const dc = baseDC + (dcAdjustments[difficulty] || 0);
 
-    // Check if the roll was a success
-    const success = roll.total >= easyDC;
+  const diplomacy = actor.system.skills.diplomacy;
+  const modifiers = diplomacy.modifiers?.filter(m => m.enabled) || [];
+  const totalMod = modifiers.reduce((sum, mod) => sum + (mod.modifier || 0), 0);
 
-    // Display the roll result in chat
-    roll.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor: actor }),
-        flavor: `
-            <strong>Diplomacy Check (Easy DC: ${easyDC})</strong><br>
-            Rolled: ${roll.total} (Modifier: ${totalModifier})<br>
-            ${success ? "<strong>Success!</strong>" : "<strong>Failure.</strong>"}
-        `
-    });
+  const roll = await new Roll(`1d20 + ${totalMod}`).evaluate({ async: true });
+  await roll.toMessage({
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor: `Diplomacy Check vs ${difficulty} (DC ${dc})`
+  });
 
-    // If the check fails, stop the macro
-    if (!success) {
-        ui.notifications.warn("The Diplomacy check failed. Marshal's Aura was not added.");
-        return;
-    }
+  const total = roll.total;
+  let degreeOfSuccess = 0;
+  if (total >= dc + 10) degreeOfSuccess = 3;
+  else if (total >= dc) degreeOfSuccess = 2;
+  else if (total <= dc - 10) degreeOfSuccess = 0;
+  else degreeOfSuccess = 1;
 
-    // Define the UUID for Marshal's Aura in the compendium
+  let resultMessage = `<hr><p>Roll Total: <strong>${total}</strong> (${degreeOfSuccess >= 2 ? "Success" : "Failure"})</p>`;
+
+  if (degreeOfSuccess >= 2) {
     const auraUUID = "Compendium.pf2e.feat-effects.Item.er5tvDNvpbcnlbHQ";
+    const existingAura = actor.items.find(item => item.system?.slug === "marshals-aura");
 
-    // Check if Marshal's Aura is already present in actor.collections.items
-    const existingAura = Array.from(actor.items.values()).some(item => item.system.slug === "marshals-aura");
-    if (existingAura) {
-        ui.notifications.warn("Marshal's Aura is already active.");
-        return;
+    if (!existingAura) {
+      const compendiumItem = await fromUuid(auraUUID);
+      if (compendiumItem) {
+        await actor.createEmbeddedDocuments("Item", [compendiumItem.toObject()]);
+        resultMessage += `<p><strong>Marshal's Aura has been added to the actor.</strong></p>`;
+      } else {
+        resultMessage += `<p><strong style="color:red;">Failed to find Marshal's Aura in the compendium.</strong></p>`;
+      }
+    } else {
+      resultMessage += `<p><em>Marshal's Aura is already active.</em></p>`;
     }
+  } else {
+    resultMessage += `<p><em>No effect applied.</em></p>`;
+  }
 
-    // Fetch the item from the compendium
-    const compendiumItem = await fromUuid(auraUUID);
-    if (!compendiumItem) {
-        ui.notifications.error("Failed to find Marshal's Aura in the compendium.");
-        return;
-    }
-
-    // Add the item to the actor
-    await actor.createEmbeddedDocuments("Item", [compendiumItem.toObject()]);
-    ui.notifications.info("Marshal's Aura has been added to the actor.");
+  ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor }),
+    content: resultMessage
+  });
 })();
