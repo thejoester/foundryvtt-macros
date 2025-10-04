@@ -312,4 +312,3 @@
 		ui.notifications.warn("Could not write XP Log journal entry (see console).");
 	}
 })();
-@thejoester
