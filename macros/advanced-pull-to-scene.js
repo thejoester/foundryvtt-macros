@@ -1,77 +1,117 @@
-// Get the list of available scenes and connected users
+/*
+********************************************
+	Macro Title: Advanced Pull to Scene
+	Author: TheJoester (https://github.com/thejoester)
+	Description:
+	This macro allows a FoundryVTT GM to pull selected connected users to a chosen scene.
+	It presents a dialog box listing all connected users with checkboxes, allowing the GM
+	to select specific users. The dialog also includes a dropdown menu listing all available
+	scenes, from which the GM can choose the target scene to pull users to.
+	When the "Pull to Scene" button is clicked, the selected users are transported to the
+	selected scene.
+	Usage: Run this macro as a GM in FoundryVTT.
+	Foundry Version: v12+ / v13
+	Last updated 18-July-2025
+	Author: TheJoester (https://github.com/thejoester)
+	License: MIT License
+********************************************
+*/
+
+
+// Require GM
+if (!game.user.isGM) {
+	ui.notifications.warn("You must be a GM to use this macro.");
+	return;
+}
+
+// Get available scenes and connected users (excluding yourself)
 const scenes = game.scenes.contents;
 const connectedUsers = game.users.contents.filter(user => user.active && user.id !== game.user.id);
 
-// Check for no active users
+// Show a basic dialog if no other users are connected
 if (connectedUsers.length === 0) {
-    new Dialog({
-        title: "No Connected Users",
-        content: "<p>No other users are currently connected.</p>",
-        buttons: {
-            ok: { icon: '<i class="fas fa-check"></i>', label: "OK" }
-        }
-    }).render(true);
-    return;
+	await new foundry.applications.api.DialogV2({
+		window: { title: "No Connected Users" },
+		content: `
+			<div style="min-width: 400px;">
+				<p>No other users are currently connected.</p>
+			</div>
+		`,
+		buttons: [
+			{
+				action: "ok",
+				label: "OK",
+				icon: "fas fa-check"
+			}
+		],
+		defaultAction: "ok"
+	}).render(true);
+	return;
 }
 
-// Generate HTML for user checkboxes
-let userOptions = connectedUsers.map(user => `
-    <div>
-        <input type="checkbox" id="${user.id}" name="${user.id}" />
-        <label for="${user.id}">${user.name}</label>
-    </div>
+// HTML for user checkboxes
+const userOptions = connectedUsers.map(user => `
+	<div>
+		<input type="checkbox" id="${user.id}" name="${user.id}" />
+		<label for="${user.id}">${user.name}</label>
+	</div>
 `).join("");
 
-// Generate HTML for the scene dropdown menu
-let sceneOptions = scenes.map(scene => `
-    <option value="${scene.id}">${scene.name}</option>
+// HTML for scene dropdown
+const sceneOptions = scenes.map(scene => `
+	<option value="${scene.id}">${scene.name}</option>
 `).join("");
 
-// Create a dialog to display user options, scene dropdown, and pull button
-new Dialog({
-    title: "Pull Users to Scene",
-    content: `
-        <form>
-            <p>Select scene to pull users to:</p>
-            <select id="scene-select">${sceneOptions}</select>
-            <br /><br />
-            <p>Select users to pull:</p>
-            ${userOptions}
-            <br />
-        </form>
-    `,
-    buttons: {
-        pull: {
-            icon: '<i class="fas fa-arrows-alt"></i>',
-            label: "Pull to Scene",
-            callback: (html) => {
-                // Get selected users
-                const selectedUserIds = connectedUsers
-                    .filter(user => html.find(`input[name="${user.id}"]`).is(":checked"))
-                    .map(user => user.id);
+// Build and render DialogV2
+new foundry.applications.api.DialogV2({
+	window: { title: "Pull Users to Scene" },
+	content: `
+		<div style="min-width: 300px; max-height: 70vh; overflow-y: auto; padding-right: 1em;">	
+			<form>
+				<p>Select scene to pull users to:</p>
+				<select id="scene-select">${sceneOptions}</select>
+				<br /><br />
+				<p>Select users to pull:</p>
+				${userOptions}
+				<br />
+			</form>
+		</div>
+	`,
+	buttons: [
+		{
+			action: "pull",
+			label: "Pull to Scene",
+			icon: "fas fa-arrows-alt",
+			callback: (event, button, dialog) => {
+				const form = button.form;
 
-                // Get selected scene ID
-                const sceneId = html.find("#scene-select").val();
-                const selectedScene = game.scenes.get(sceneId);
+				// Get selected users
+				const selectedUserIds = connectedUsers
+					.filter(user => form.querySelector(`input[name="${user.id}"]`)?.checked)
+					.map(user => user.id);
 
-                // Check if the scene ID is valid
-                if (!selectedScene) {
-                    ui.notifications.error("Selected scene not found.");
-                    return;
-                }
+				// Get selected scene
+				const sceneId = form.querySelector("#scene-select")?.value;
+				const selectedScene = game.scenes.get(sceneId);
 
-                // Pull each selected user to the selected scene
-                selectedUserIds.forEach(userId => {
-                    game.socket.emit("pullToScene", sceneId, userId);
-                });
+				if (!selectedScene) {
+					ui.notifications.error("Selected scene not found.");
+					return;
+				}
 
-                ui.notifications.info("Selected users pulled to the scene.");
-            }
-        },
-        cancel: {
-            icon: '<i class="fas fa-times"></i>',
-            label: "Cancel"
-        }
-    },
-    default: "pull"
+				// Pull each selected user to the scene
+				for (const userId of selectedUserIds) {
+					game.socket.emit("pullToScene", sceneId, userId);
+				}
+
+				ui.notifications.info("Selected users pulled to the scene.");
+			}
+		},
+		{
+			action: "cancel",
+			label: "Cancel",
+			icon: "fas fa-times"
+		}
+	],
+	defaultAction: "pull"
 }).render(true);
