@@ -1,0 +1,182 @@
+{
+  "prototypeToken": {
+    "displayName": 20,
+    "displayBars": 20,
+    "flags": {
+      "pf2e": {
+        "linkToActorSize": true,
+        "autoscale": true
+      },
+      "monks-tokenbar": {
+        "include": "default"
+      },
+      "monks-bloodsplats": {
+        "bloodsplat-type": "",
+        "bloodsplat-colour": ""
+      },
+      "Rideable": {
+        "issetRideableFlag": true,
+        "MaxRiderFlag": null,
+        "CustomRidingheightFlag": null,
+        "UseRidingHeightFlag": true,
+        "RidersScaleFlag": 1,
+        "RiderPositioningFlag": "RowPlacement",
+        "RiderOffsetFlag": [
+          0,
+          0
+        ],
+        "TokenFormFlag": "TokenFormCircle",
+        "InsideMovementFlag": false,
+        "SpawnRidersFlag": "",
+        "WorldMEffectOverrideFlag": false,
+        "MountingEffectsFlag": "",
+        "SelfApplyEffectsFlag": false,
+        "forMountEffectsFlag": "",
+        "CanbePilotedFlag": false,
+        "CheckPilotedCollisionFlag": false,
+        "PilotedbyDefaultFlag": false
+      }
+    },
+    "height": 0.5,
+    "width": 0.5,
+    "actorLink": true,
+    "sight": {
+      "enabled": true,
+      "range": 0,
+      "angle": 360,
+      "visionMode": "basic",
+      "color": null,
+      "attenuation": 0.1,
+      "brightness": 0,
+      "saturation": 0,
+      "contrast": 0
+    },
+    "name": "light-spell",
+    "appendNumber": false,
+    "prependAdjective": false,
+    "texture": {
+      "src": "https://i.ibb.co/84jkxg2G/light.webp",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "offsetX": 0,
+      "offsetY": 0,
+      "fit": "contain",
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "tint": "#ffffff",
+      "alphaThreshold": 0.75
+    },
+    "lockRotation": false,
+    "rotation": 0,
+    "alpha": 1,
+    "disposition": -1,
+    "bar1": {
+      "attribute": "attributes.hp"
+    },
+    "bar2": {
+      "attribute": null
+    },
+    "light": {
+      "negative": false,
+      "priority": 0,
+      "alpha": 0.7,
+      "angle": 360,
+      "bright": 20,
+      "color": "#fdf1ac",
+      "coloration": 1,
+      "dim": 40,
+      "attenuation": 0.5,
+      "luminosity": 0.5,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0,
+      "animation": {
+        "type": "starlight",
+        "speed": 2,
+        "intensity": 3,
+        "reverse": false
+      },
+      "darkness": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "detectionModes": [],
+    "occludable": {
+      "radius": 0
+    },
+    "ring": {
+      "enabled": false,
+      "colors": {
+        "ring": null,
+        "background": null
+      },
+      "effects": 0,
+      "subject": {
+        "scale": 1,
+        "texture": null
+      }
+    },
+    "randomImg": false,
+    "turnMarker": {
+      "mode": 1,
+      "animation": null,
+      "src": null,
+      "disposition": false
+    },
+    "movementAction": null
+  },
+  "name": "light-spell",
+  "type": "familiar",
+  "effects": [],
+  "system": {
+    "_migration": {
+      "version": 0.943,
+      "previous": {
+        "schema": 0.942,
+        "foundry": "13.348",
+        "system": "7.5.1"
+      }
+    },
+    "master": {
+      "id": null,
+      "ability": null
+    },
+    "attributes": {
+      "hp": {
+        "value": 0,
+        "temp": 0
+      }
+    },
+    "details": {
+      "creature": {
+        "value": ""
+      }
+    }
+  },
+  "img": "icons/magic/light/explosion-star-glow-blue.webp",
+  "items": [],
+  "folder": null,
+  "flags": {},
+  "_stats": {
+    "compendiumSource": "",
+    "duplicateSource": null,
+    "exportSource": {
+      "worldId": "",
+      "uuid": "Actor.JkUWiz22hCEradim",
+      "coreVersion": "13.350",
+      "systemId": "pf2e",
+      "systemVersion": "7.5.2"
+    },
+    "coreVersion": "",
+    "systemId": "pf2e",
+    "systemVersion": "7.5.1",
+    "createdTime": 1757116908332,
+    "modifiedTime": 1758939377634,
+    "lastModifiedBy": "CLMiGpsYVSTK4VM8"
+  },
+  "ownership": {
+    "default": 1
+  }
+}
