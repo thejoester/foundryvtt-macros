@@ -1,130 +1,115 @@
-/* 
-******************************************************************
-    Macro Title: Prompt Class DC Save [PF2E]
-    Foundry Version: 12
-    System: PF2E
-    Last updated 12-Nov-2024
-    
-    Description:
-    This macro allows a GM or player to prompt a selected target 
-	to make a saving throw (Will, Reflex, or Fortitude) against 
-	the Class DC of a selected token’s actor. When the macro is 
-	executed, a dialog box appears allowing the user to choose the 
-	save type (Will, Reflex, or Fortitude) that the target must 
-	attempt. A clickable message is then generated in the chat, 
-	which, when clicked, rolls the selected save against the 
-	Class DC.
-    
-    Usage:
-    - Select a token representing the actor initiating the save.
-    - Target another token to act as the defender who will roll 
-	the save.
-    - Run this macro to open a dialog box prompting you to select 
-	the save type.
-    - A clickable message appears in the chat, allowing the target 
-	to roll the specified save.
-    - The roll result, along with a comparison against the 
-	initiating actor’s Class DC, will appear in the chat.
-    
-    Requirements:
-    - A token must be selected as the initiating actor.
-    - A target token must be selected as the defender.
-    - The initiating actor must have a Class DC defined.
-    
-    Author: TheJoester (https://github.com/thejoester)
-    License: MIT License
-    
-    Example Use Case:
-    Useful for Game Masters or players running a combat or 
-	encounter where one character’s ability prompts another 
-	character to make a save against their Class DC (e.g., spells, 
-    abilities that prompt saving throws).
-******************************************************************
-*/
+/* ***************************************************************************
+	Macro Title: Prompt Save/Check vs Class DC 
+	Author: TheJoester
+	Last updated: 04-Oct-2025
+	License: MIT
 
-// Ensure a token is selected
+	Notes:
+	- Uses PF2e inline checks so ANY player can click to roll.
+	- Includes plain target names (no UUID links) in the chat message.
+*************************************************************************** */
+
 if (!canvas.tokens.controlled.length) {
-    ui.notifications.warn("Please select a token.");
-    return;
+	ui.notifications.warn("Please select your token first.");
+	return;
 }
 
-// Get the selected token and actor
 const token = canvas.tokens.controlled[0];
 const actor = token.actor;
 
-// Ensure a target is selected
-if (!game.user.targets.size) {
-    ui.notifications.warn("Please select a target.");
-    return;
+const classDC = actor.system?.attributes?.classDC?.value;
+if (classDC == null) {
+	ui.notifications.warn("This actor does not have a Class DC.");
+	return;
 }
 
-// Get the target token and actor
-const targetToken = game.user.targets.values().next().value;
-const targetActor = targetToken.actor;
+// Collect current targets
+const targets = Array.from(game.user.targets ?? []);
+const targetList = targets.length
+	? targets.map(t => t.name).join(", ")
+	: "<em>None</em>";
 
-// Get the Class DC
-const classDC = actor.system.attributes.classDC?.value;
+// Define available checks
+const saves = { fortitude: "Fortitude", reflex: "Reflex", will: "Will" };
+const senses = { perception: "Perception" };
+const skills = {
+	acrobatics: "Acrobatics", arcana: "Arcana", athletics: "Athletics", crafting: "Crafting",
+	deception: "Deception", diplomacy: "Diplomacy", intimidation: "Intimidation", medicine: "Medicine",
+	nature: "Nature", occultism: "Occultism", performance: "Performance", religion: "Religion",
+	society: "Society", stealth: "Stealth", survival: "Survival", thievery: "Thievery"
+};
 
-// Ensure Class DC exists
-if (classDC === undefined) {
-    ui.notifications.warn("This actor does not have a Class DC.");
-    return;
+// Restrict dropdown to what THIS actor can roll
+const valid = new Map();
+for (const [key, label] of Object.entries({ ...saves, ...senses, ...skills })) {
+	const stat = actor?.skills?.[key] ?? actor?.saves?.[key] ?? (key === "perception" ? actor?.perception : null);
+	if (stat?.roll && typeof stat.roll === "function") valid.set(key, label);
+}
+if (valid.size === 0) {
+	ui.notifications.warn("No valid checks available for this actor.");
+	return;
 }
 
-// Prompt for the type of save
-new Dialog({
-    title: "Choose Save Type",
-    content: `
-        <p>Select the type of save:</p>
-        <form>
-            <div class="form-group">
-                <label for="save-type">Save Type:</label>
-                <select id="save-type" name="save-type">
-                    <option value="will">Will</option>
-                    <option value="reflex">Reflex</option>
-                    <option value="fortitude">Fortitude</option>
-                </select>
-            </div>
-        </form>
-        <br />`,
-    buttons: {
-        roll: {
-            label: "Prompt Save",
-            callback: (html) => {
-                const saveType = html.find('[name="save-type"]').val();
-                const saveName = saveType.charAt(0).toUpperCase() + saveType.slice(1);
-                const saveModifier = targetActor.system.saves[saveType]?.value;
+// Build dropdown HTML
+const makeGroup = (group, name, color) => {
+	const entries = Object.entries(group)
+		.filter(([k]) => valid.has(k))
+		.map(([k, lbl]) => `<option value="${k}" style="color:${color};">${lbl}</option>`);
+	return entries.length ? `<optgroup label="${name}">${entries.join("")}</optgroup>` : "";
+};
 
-                // Ensure the target's save modifier exists
-                if (saveModifier === undefined) {
-                    ui.notifications.warn(`${targetActor.name} does not have a ${saveName} save.`);
-                    return;
-                }
+const optionsHTML = [
+	makeGroup(saves, "Saving Throws", "#4CAF50"),
+	makeGroup(senses, "Senses", "#FFC107"),
+	makeGroup(skills, "Skills", "#2196F3")
+].join("");
 
-                // Create a clickable message to trigger the roll
-                ChatMessage.create({
-                    content: `Target ${targetActor.name}, please attempt a ${saveName} Save against DC ${classDC}: 
-                              <button class="save-roll" style="background-color:#d4af37; color:white; border:none; padding:5px; cursor:pointer;">
-                              Roll ${saveName} Save</button>`,
-                    speaker: ChatMessage.getSpeaker({ actor })
-                });
+// Create DialogV2 prompt
+new foundry.applications.api.DialogV2({
+	window: { title: "Choose Save or Check" },
+	content: `
+		<form>
+			<div class="form-group">
+				<label for="check-type">Type:</label>
+				<select id="check-type" name="check-type" style="margin-left: 1em; width: 220px;">
+					${optionsHTML}
+				</select>
+			</div>
+			<p style="margin:0.5em 0 0;"><strong>DC:</strong> ${classDC} (Class DC)</p>
+			<p style="margin:0.25em 0 0;"><strong>Targets:</strong> ${targetList}</p>
+		</form>
+	`,
+	buttons: [{
+		action: "post",
+		label: "Post to Chat",
+		default: true,
+		callback: (event, button) => {
+			const key = button.form.elements["check-type"].value;
+			if (!key) return;
 
-                // Event listener for the roll button
-                Hooks.once("renderChatMessage", (chatMessage, html) => {
-                    html.find(".save-roll").click(async () => {
-                        const roll = new Roll(`1d20 + ${saveModifier}`);
-                        await roll.roll({ async: true });
-                        roll.toMessage({
-                            speaker: ChatMessage.getSpeaker({ actor }),
-                            flavor: `${targetActor.name}'s ${saveName} Save vs. DC ${classDC}`,
-                        });
-                    });
-                });
-            }
-        },
-        cancel: {
-            label: "Cancel"
-        }
-    },
-    default: "roll"
-}).render(true);
+			const label =
+				saves[key] ??
+				senses[key] ??
+				skills[key] ??
+				key;
+
+			const isSave = key in saves;
+			const typeWord = isSave ? "Save" : "Check";
+
+			// Inline check link (clickable by anyone)
+			const inline = `@Check[type:${key}|dc:${classDC}]{Roll ${label} ${typeWord}}`;
+
+			ChatMessage.create({
+				speaker: ChatMessage.getSpeaker({ actor }),
+				content: `
+					<p><strong>${actor.name}</strong> requests a ${label} ${typeWord} vs DC <strong>${classDC}</strong>.</p>
+					<p><strong>Targets:</strong> ${targetList}</p>
+					<p>${inline}</p>
+				`.trim()
+			});
+		}
+	}, {
+		action: "cancel",
+		label: "Cancel"
+	}]
+}).render({ force: true });
