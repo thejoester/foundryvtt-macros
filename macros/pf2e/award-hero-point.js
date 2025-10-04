@@ -1,15 +1,15 @@
 /* ***************************************************************************
 	Macro Title: Award Hero Points
 	Author: TheJoester (https://github.com/thejoester)
-  Last updated 04-OCT-2025
+  	Last updated 04-OCT-2025
 	License: MIT License
-  Foundry Version: v12+ / v13
-  System: PF2e
+  	Foundry Version: v12+ / v13
+  	System: PF2e
   
 	Description:
-  Award all actors in party hero points. 
-  - Choose to Add or Set value
-  - Outputs message to chat
+  	Award all actors in party hero points. 
+  	- Choose to Add or Set value
+  	- Outputs message to chat
 *************************************************************************** */
 
 (async () => {
@@ -123,5 +123,5 @@
 	`;
 
 
-	await ChatMessage.create({ content: flavorText, whisper: [game.user.id] });
+	await ChatMessage.create({ content: flavorText, speaker: { alias: "GM" } });
 })();
