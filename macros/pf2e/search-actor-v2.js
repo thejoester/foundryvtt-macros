@@ -1,23 +1,17 @@
-/*
-******************************************************************
-
+/* ******************************************************************
 	Macro Title: Search Actors (v2)
 	Author: TheJoester (https://github.com/thejoester)
+	Last updated 2025-10-04
+	Foundry Version: v12 - v13
+	System: pf2e
+	License: MIT License
+	
 	Description:
 	Search selected tokens, shows report of items, spells, featc, etc. 
-	
 	- Supports Header row
 	- Pick which column (for .csv with multiple columns)
  	- Specify name of Roll Table (defaults to file name)
-
-	Foundry Version: v12 - v13
-	Last updated 2025-10-04
-
-	Author: TheJoester (https://github.com/thejoester)
-	License: MIT License
-
-******************************************************************
-*/
+****************************************************************** */
 (async () => {
 	// Guards
 	const selected = canvas?.tokens?.controlled ?? [];
