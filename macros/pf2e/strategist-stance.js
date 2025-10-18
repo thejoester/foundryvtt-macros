@@ -4,121 +4,157 @@
 	Macro Title: Strategist Marshal Stance
 	Author: TheJoester (https://github.com/thejoester)
 	Description:
-	This macro is for players with the Dread Marshal Stance from 
-	the Marshall Dedication. 
-	
-	- Prompt for difficulty, defaults to easy
-	- Rolls Society or Warfare Lore check (whichever is better) based on 
-   difficulty for level 
- 	- If the roll is a success, it will apply the "Strategist 
-	Marshal Stance" Aura on the player. 
+	- Prompt for difficulty (default Easy)
+	- Roll Society or Warfare Lore (whichever is better) vs level DC
+	- On success, apply Strategist's Aura
 
 	Foundry Version: v12 - v13
 	Last updated 16-July-2025
-
-	Author: TheJoester (https://github.com/thejoester)
-	License: MIT License
+	License: MIT
 
 ******************************************************************
 */
 
 (async () => {
-  if (!token) {
-    ui.notifications.warn("Please select a token.");
-    return;
-  }
+	if (!token) {
+		ui.notifications.warn("Please select a token.");
+		return;
+	}
+	const actor = token.actor;
+	if (!actor) {
+		ui.notifications.error("No actor found for the selected token.");
+		return;
+	}
 
-  const actor = token.actor;
-  if (!actor) {
-    ui.notifications.error("No actor found for the selected token.");
-    return;
-  }
+	// Level-based DC table (GMG / PF2e standard)
+	const level = actor.system.details.level.value;
+	const dcTable = [14, 15, 16, 18, 19, 20, 22, 23, 24, 26, 27, 28, 30, 31, 32, 34, 35, 36, 38, 39, 40];
+	const baseDC = dcTable[level] || 10;
 
-  const level = actor.system.details.level.value;
-  const dcTable = [14, 15, 16, 18, 19, 20, 22, 23, 24, 26, 27, 28, 30, 31, 32, 34, 35, 36, 38, 39, 40];
-  const baseDC = dcTable[level] || 10;
-  const dcAdjustments = {
-    "Incredibly easy": -10,
-    "Very easy": -5,
-    "Easy": -2,
-    "Hard": 2,
-    "Very hard": 5,
-    "Incredibly hard": 10
-  };
+	const dcAdjustments = {
+		"Incredibly easy": -10,
+		"Very easy": -5,
+		"Easy": -2,
+		"Hard": 2,
+		"Very hard": 5,
+		"Incredibly hard": 10
+	};
+	const difficulties = Object.keys(dcAdjustments);
 
-  const difficulties = Object.keys(dcAdjustments);
+	// ── DialogV2: await user choice ───────────────────────────────
+	const chosenDifficulty = await new Promise((resolve, reject) => {
+		new foundry.applications.api.DialogV2({
+			window: { title: "Strategist Marshal Stance" },
+			content: `
+				<form>
+					<div class="form-group">
+						<label>Choose Difficulty:</label>
+						<select name="difficulty" autofocus>
+							${difficulties.map(d => `<option value="${d}" ${d === "Easy" ? "selected" : ""}>${d}</option>`).join("")}
+						</select>
+					</div>
+				</form>
+			`,
+			buttons: [{
+				action: "roll",
+				label: "Roll",
+				default: true,
+				callback: (event, button) => button.form.elements.difficulty.value
+			}, {
+				action: "cancel",
+				label: "Cancel"
+			}],
+			submit: (result) => {
+				if (!result || result === "cancel") return reject(new Error("cancelled"));
+				resolve(result);
+			}
+		}).render(true);
+	}).catch(() => null);
 
-  const content = `<form>
-    <div class="form-group">
-      <label>Choose Difficulty:</label>
-      <select id="difficulty" name="difficulty">
-        ${difficulties.map(d => `<option value="${d}" ${d === "Easy" ? "selected" : ""}>${d}</option>`).join("")}
-      </select>
-    </div>
-  </form>`;
+	if (!chosenDifficulty) return; // user cancelled
 
-  const { result, form } = await Dialog.prompt({
-    title: "Strategist Stance",
-    content,
-    label: "Strategist Stance",
-    callback: html => ({ result: true, form: html[0] }),
-    rejectClose: false
-  });
+	const dc = baseDC + (dcAdjustments[chosenDifficulty] ?? 0);
 
-  if (!result) return;
+	// ── Choose the better skill: Society vs Warfare Lore ──────────
+	// Use PF2e's skill objects so we can call check.roll()
+	const skills = actor.skills ?? actor.system.skills ?? {};
+	const society = skills.society ?? null;
 
-  const difficulty = form.querySelector("#difficulty").value;
-  const dc = baseDC + (dcAdjustments[difficulty] || 0);
+	// Warfare Lore key is typically "warfare-lore"
+	const warfare = skills["warfare-lore"] ?? skills["warfare_lore"] ?? null;
 
-  const society = actor.system.skills.society;
-  const warfareLore = actor.system.skills["warfare-lore"];
+	// Helper to get total modifier in a tolerant way
+	const getMod = (s) => {
+		if (!s) return -9999;
+		// Prefer .totalModifier (newer PF2e), else .mod, else sum modifiers
+		if (typeof s.totalModifier === "number") return s.totalModifier;
+		if (typeof s.mod === "number") return s.mod;
+		const mods = s.modifiers?.filter?.(m => m.enabled) ?? [];
+		return mods.reduce((sum, m) => sum + (m.modifier || 0), 0);
+	};
 
-  const getMod = (skill) => {
-    const mods = skill?.modifiers?.filter(m => m.enabled) || [];
-    return mods.reduce((sum, mod) => sum + (mod.modifier || 0), 0);
-  };
+	const socMod = getMod(society);
+	const warMod = getMod(warfare);
 
-  const societyMod = getMod(society);
-  const warfareMod = getMod(warfareLore);
+	// Pick the better; if Warfare Lore doesn't exist, Society wins by default
+	const chosenSkill = warMod > socMod ? warfare : society;
+	const chosenLabel = (chosenSkill === warfare) ? "Warfare Lore" : "Society";
 
-  const usingSkill = societyMod >= warfareMod ? { name: "Society", mod: societyMod } : { name: "Warfare Lore", mod: warfareMod };
+	if (!chosenSkill?.check?.roll) {
+		ui.notifications.error(`Could not find a rollable ${chosenLabel} skill on this actor.`);
+		return;
+	}
 
-  const roll = await new Roll(`1d20 + ${usingSkill.mod}`).evaluate({ async: true });
-  await roll.toMessage({
-    speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `${usingSkill.name} Check vs ${difficulty} (DC ${dc})`
-  });
+	// ── PF2e check roll (proper chat card => right-click reroll) ──
+	const flavor = `${chosenLabel} Check vs ${chosenDifficulty} (DC ${dc}) — Strategist Marshal Stance`;
+	let outcomeLabel = null;
 
-  const total = roll.total;
-  let degreeOfSuccess = 0;
-  if (total >= dc + 10) degreeOfSuccess = 3;
-  else if (total >= dc) degreeOfSuccess = 2;
-  else if (total <= dc - 10) degreeOfSuccess = 0;
-  else degreeOfSuccess = 1;
+	await chosenSkill.check.roll({
+		dc: { value: dc },
+		flavor,
+		skipDialog: true,
+		extraRollOptions: ["action:strategist-marshal-stance"],
+		traits: ["auditory", "mental"], // tweak if you like
+		callback: (roll, outcome /* "criticalSuccess"|"success"|"failure"|"criticalFailure" */, message) => {
+			outcomeLabel = outcome;
+		}
+	});
 
-  let resultMessage = `<hr><p>${usingSkill.name} Roll Total: <strong>${total}</strong> (${degreeOfSuccess >= 2 ? "Success" : "Failure"})</p>`;
+	// Fallback if outcome wasn't provided by callback (API version variance)
+	if (!outcomeLabel) {
+		const last = [...game.messages].reverse().find(m =>
+			m.speaker?.actor === actor.id &&
+			m.flags?.pf2e?.context?.type === "check" &&
+			typeof m.flags?.pf2e?.context?.dc?.value === "number" &&
+			String(m.flavor || m.content || "").includes("Strategist Marshal Stance")
+		);
+		outcomeLabel = last?.flags?.pf2e?.context?.outcome ?? null;
+	}
 
-  if (degreeOfSuccess >= 2) {
-    const auraUUID = "Compendium.pf2e.feat-effects.Item.z6oLNlBs724PCcR6"; // Update with correct aura if needed
-    const existingAura = actor.items.find(item => item.system?.slug === "strategists-aura");
+	// ── Apply Strategist's Aura on success ────────────────────────
+	let resultMessage = `<hr><p>${chosenLabel} Result: <strong>${outcomeLabel ?? "—"}</strong></p>`;
+	if (outcomeLabel === "success" || outcomeLabel === "criticalSuccess") {
+		const auraUUID = "Compendium.pf2e.feat-effects.Item.z6oLNlBs724PCcR6"; // Strategist's Aura
+		const existingAura = actor.items.find(i => i.system?.slug === "strategists-aura");
+		if (!existingAura) {
+			const compendiumItem = await fromUuid(auraUUID);
+			if (compendiumItem) {
+				await actor.createEmbeddedDocuments("Item", [compendiumItem.toObject()]);
+				resultMessage += `<p><strong>Strategist's Aura has been added to the actor.</strong></p>`;
+			} else {
+				resultMessage += `<p><strong style="color:red;">Failed to find Strategist's Aura in the compendium.</strong></p>`;
+			}
+		} else {
+			resultMessage += `<p><em>Strategist's Aura is already active.</em></p>`;
+		}
+	} else if (outcomeLabel) {
+		resultMessage += `<p><em>No effect applied.</em></p>`;
+	} else {
+		resultMessage += `<p><em>Could not determine outcome from the chat card.</em></p>`;
+	}
 
-    if (!existingAura) {
-      const compendiumItem = await fromUuid(auraUUID);
-      if (compendiumItem) {
-        await actor.createEmbeddedDocuments("Item", [compendiumItem.toObject()]);
-        resultMessage += `<p><strong>Strategist's Aura has been added to the actor.</strong></p>`;
-      } else {
-        resultMessage += `<p><strong style="color:red;">Failed to find Strategist's Aura in the compendium.</strong></p>`;
-      }
-    } else {
-      resultMessage += `<p><em>Strategist's Aura is already active.</em></p>`;
-    }
-  } else {
-    resultMessage += `<p><em>No effect applied.</em></p>`;
-  }
-
-  ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor }),
-    content: resultMessage
-  });
+	ChatMessage.create({
+		speaker: ChatMessage.getSpeaker({ actor }),
+		content: resultMessage
+	});
 })();
