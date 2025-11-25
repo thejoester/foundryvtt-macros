@@ -1,5 +1,5 @@
 /* ***************************************************************************
-	Macro Title: Award Hero Points
+	Macro Title: Award Hero Points 
 	Author: TheJoester (https://github.com/thejoester)
   	Last updated 04-OCT-2025
 	License: MIT License
