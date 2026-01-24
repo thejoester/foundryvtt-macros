@@ -196,7 +196,6 @@
 		}
 
 		_replaceHTML(html, _element, { renderContext, renderOptions } = {}) {
-			// Standard V2 pattern: replace inner content
 			const el = this.element;
 			if (!el) return;
 
@@ -223,16 +222,7 @@
 					ui.notifications.warn("Nothing selected.");
 					return;
 				}
-
-				// De-dupe operations:
-				// - World actor entries: operate on that actor
-				// - Token entries:
-				//    - if linked -> operate on the base actor (same as actor entry)
-				//    - if unlinked -> operate on the synthetic token actor
-				//
-				// Key by operation target:
-				// - linked token uses actor uuid
-				// - unlinked token uses sceneId:tokenId
+				
 				const ops = new Map();
 
 				for (const e of selected) {
