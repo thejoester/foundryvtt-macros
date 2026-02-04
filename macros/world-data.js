@@ -101,11 +101,19 @@ for (const [label, collection] of Object.entries(collections)) {
 	/* ---------- Tab content ---------- */
 
 	const entryList = entries.map(e => {
-		const highlight = e.size >= threshold
-			? ' style="color:#d33;font-weight:bold;" title="Above threshold"'
-			: "";
+		let style = "", title = "";
 
-		return `<li${highlight}><strong>${e.name}</strong>: ${formatSizeKB(e.size)}</li>`;
+		if (e.size >= threshold) {
+			style = "color:#d33;font-weight:bold;";
+			title = "Above threshold";
+		} else if (e.size >= threshold * 0.85) {
+			style = "color:orange;font-weight:bold;";
+			title = "Near threshold";
+		}
+
+		const attr = style ? ` style="${style}" title="${title}"` : "";
+
+		return `<li${attr}><strong>${e.name}</strong>: ${formatSizeKB(e.size)}</li>`;
 	}).join("");
 
 	const sectionHTML = `
