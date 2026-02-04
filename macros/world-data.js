@@ -107,7 +107,7 @@ for (const [label, collection] of Object.entries(collections)) {
 			style = "color:#d33;font-weight:bold;";
 			title = "Above threshold";
 		} else if (e.size >= threshold * 0.85) {
-			style = "color:orange;font-weight:bold;";
+			style = "color:#e67e22;font-weight:bold;";
 			title = "Near threshold";
 		}
 
