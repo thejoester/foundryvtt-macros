@@ -32,6 +32,8 @@ Welcome to the foundryvtt-macros wiki!
 
 [**Everlight Crystal Toggle**](https://github.com/thejoester/foundryvtt-macros/wiki/%5BPF2e%5D-Everlight-Crystal-Toggle) - This macro toggles the equipped state of the "Everlight Crystal".
 
+[**Expert Only Check**](https://github.com/thejoester/foundryvtt-macros/wiki/%5BPF2e%5D-Expert-Only-Check) - Prompt only the selected PC with the highest modifier for a chosen skill/perception/save; tie-breaker can be prompted or random, and it posts an inline @Check roll link to chat.
+
 [**Group Roll**](https://github.com/thejoester/foundryvtt-macros/wiki/%5BPF2e%5D-Group-Roll) - (GM) Roll Check/Save for multiple selected tokens (Characters or NPCs) at once. 
 
 [**Light Spell Orb**](https://github.com/thejoester/foundryvtt-macros/wiki/%5BPF2e%5D-Light-Spell-Orb) - Macro to create token for light spell orb, player can choose color. 
