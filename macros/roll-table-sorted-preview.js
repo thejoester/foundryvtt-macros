@@ -92,12 +92,8 @@ new foundry.applications.api.DialogV2({
 
 		const infos = entries.map(extractEntryInfo);
 
-		const rows = infos.map(({ name, url }) => {
-			const nameCell = `<td style="padding:3px 8px; vertical-align:top;">${name}</td>`;
-			const urlCell = url
-				? `<td style="padding:3px 8px; vertical-align:top;"><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></td>`
-				: `<td style="padding:3px 8px;"></td>`;
-			return `<tr style="border-bottom:1px solid #ddd;">${nameCell}${urlCell}</tr>`;
+		const rows = infos.map(({ name }) => {
+			return `<tr style="border-bottom:1px solid #ddd;"><td style="padding:3px 8px; vertical-align:top;">${name}</td></tr>`;
 		}).join("");
 
 		const tableHtml = `
@@ -105,7 +101,6 @@ new foundry.applications.api.DialogV2({
 				<thead>
 					<tr style="background:#444; color:#fff;">
 						<th style="text-align:left; padding:5px 8px;">Name</th>
-						<th style="text-align:left; padding:5px 8px;">URL</th>
 					</tr>
 				</thead>
 				<tbody>${rows}</tbody>
