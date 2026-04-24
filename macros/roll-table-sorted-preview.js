@@ -13,42 +13,59 @@
 	- Cleans up each entry by:
 		• Removing Foundry-style inline links (@UUID[…]{Label})
 		• Ignoring leading numeric prefixes (e.g., "01 Goblin" → "Goblin")
+		• Extracting any HTTP/HTTPS URLs from text or description
 		• Comparing case-insensitively
 	- Sorts entries alphabetically by cleaned text, then by description.
-	- Displays the sorted list in a scrollable, read-only preview window.
+	- Displays the sorted list in a scrollable table with clickable URL links.
+	- Export button saves results as a .txt file in "name - url" format.
 	- Useful for quickly checking or organizing table data in a readable order.
 
 	Usage:
 	1. Run the macro.
 	2. Choose a RollTable from the list.
-	3. The macro displays a scrollable text preview of the sorted results.
+	3. Browse the sorted table preview; click URLs to open in a new tab.
+	4. Optionally click "Export to .txt" to save the list.
 
 *************************************************************************** */
 
 
-const LINK_REMOVER = /@\w+\[([^\]]+)\]\{([^}]+)\}/g;
-
-// Sort entries alphabetically ignoring numbers by name (or text), then description
+// Sort entries alphabetically ignoring leading numbers by name (or text), then description
 function compareLabels(a, b) {
 	const clean = str => (str || "")
-		.replaceAll(LINK_REMOVER, "$2")    // Strip Foundry links
-		.replace(/^\d+\s*/, "")            // Remove leading numbers + optional space
+		.replace(/@\w+\[([^\]]+)\]\{([^}]+)\}/g, "$2")
+		.replace(/^\d+\s*/, "")
 		.trim()
-		.toLowerCase();                    // Optional: ignore case
+		.toLowerCase();
 
-	const textA = clean(a.text);
-	const textB = clean(b.text);
-
-	const textCompare = textA.localeCompare(textB);
+	const textCompare = clean(a.text).localeCompare(clean(b.text));
 	if (textCompare !== 0) return textCompare;
+	return clean(a.description).localeCompare(clean(b.description));
+}
 
-	const descA = clean(a.description);
-	const descB = clean(b.description);
-	return descA.localeCompare(descB);
+// Extract display name and first URL from a table entry
+function extractEntryInfo(e) {
+	const rawText = e.text || "";
+	const rawDesc = e.description || "";
+
+	const url = (rawText.match(/https?:\/\/[^\s<>"]+/) ||
+	             rawDesc.match(/https?:\/\/[^\s<>"]+/) || [])[0] || null;
+
+	const name = rawText
+		.replace(/@\w+\[([^\]]+)\]\{([^}]+)\}/g, "$2")
+		.replace(/https?:\/\/[^\s<>"]+/g, "")
+		.replace(/^\d+\s*/, "")
+		.trim()
+		|| rawDesc
+			.replace(/@\w+\[([^\]]+)\]\{([^}]+)\}/g, "$2")
+			.replace(/https?:\/\/[^\s<>"]+/g, "")
+			.trim()
+		|| "(no text)";
+
+	return { name, url };
 }
 
 // Build dropdown options
-const tableOptions = game.tables.map(t => 
+const tableOptions = game.tables.map(t =>
 	`<option value="${t.uuid}">${t.name}</option>`
 ).join("");
 
@@ -62,10 +79,7 @@ new foundry.applications.api.DialogV2({
 		action: "preview",
 		label: "Show Sorted Preview",
 		default: true,
-		callback: (event, button, dialog) => {
-			const select = button.form.elements.table;
-			return select?.value || null;
-		}
+		callback: (event, button, dialog) => button.form.elements.table?.value || null
 	}],
 	submit: async (uuid) => {
 		if (!uuid) return;
@@ -76,27 +90,64 @@ new foundry.applications.api.DialogV2({
 		const entries = Array.from(table.getEmbeddedCollection("TableResult"));
 		entries.sort(compareLabels);
 
-		const contentText = entries.map((e, i) => {
-			// Clean both text and description
-			const cleanedText = (e.text || "").replaceAll(LINK_REMOVER, "$2");
-			const cleanedDesc = (e.description || "").replaceAll(LINK_REMOVER, "$2");
+		const infos = entries.map(extractEntryInfo);
 
-			// Prefer cleanedText if available, otherwise fallback to cleanedDesc
-			return cleanedText || cleanedDesc || "(no text)";
-		}).join("\n");
+		const rows = infos.map(({ name, url }) => {
+			const nameCell = `<td style="padding:3px 8px; vertical-align:top;">${name}</td>`;
+			const urlCell = url
+				? `<td style="padding:3px 8px; vertical-align:top;"><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></td>`
+				: `<td style="padding:3px 8px;"></td>`;
+			return `<tr style="border-bottom:1px solid #ddd;">${nameCell}${urlCell}</tr>`;
+		}).join("");
+
+		const tableHtml = `
+			<table style="width:100%; border-collapse:collapse; font-size:0.9em;">
+				<thead>
+					<tr style="border-bottom:2px solid #aaa; background:#f0f0f0;">
+						<th style="text-align:left; padding:5px 8px;">Name</th>
+						<th style="text-align:left; padding:5px 8px;">URL</th>
+					</tr>
+				</thead>
+				<tbody>${rows}</tbody>
+			</table>
+		`;
+
+		const exportContent = infos
+			.map(({ name, url }) => url ? `${name} - ${url}` : name)
+			.join("\n");
 
 		new foundry.applications.api.DialogV2({
 			window: { title: `Sorted Preview: ${table.name}` },
 			content: `
-				<div style="min-width: 500px; max-height: 70vh; overflow-y: auto; padding-right: 1em;">
-					<textarea readonly style="width: 100%; height: 400px; font-family: monospace;">${contentText}</textarea>
+				<div style="min-width:640px; max-height:70vh; overflow-y:auto; padding-right:0.5em;">
+					${tableHtml}
 				</div>
 			`,
-			buttons: [{
-				action: "close",
-				label: "Close",
-				default: true
-			}]
+			buttons: [
+				{
+					action: "export",
+					label: "Export to .txt",
+					callback: () => "export"
+				},
+				{
+					action: "close",
+					label: "Close",
+					default: true,
+					callback: () => "close"
+				}
+			],
+			submit: (result) => {
+				if (result !== "export") return;
+				const blob = new Blob([exportContent], { type: "text/plain" });
+				const blobUrl = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = blobUrl;
+				a.download = `${table.name}.txt`;
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(blobUrl);
+			}
 		}).render(true);
 	}
 }).render(true);
