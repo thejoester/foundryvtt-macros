@@ -103,7 +103,7 @@ new foundry.applications.api.DialogV2({
 		const tableHtml = `
 			<table style="width:100%; border-collapse:collapse; font-size:0.9em;">
 				<thead>
-					<tr style="border-bottom:2px solid #aaa; background:#f0f0f0;">
+					<tr style="background:#444; color:#fff;">
 						<th style="text-align:left; padding:5px 8px;">Name</th>
 						<th style="text-align:left; padding:5px 8px;">URL</th>
 					</tr>
@@ -138,7 +138,7 @@ new foundry.applications.api.DialogV2({
 			],
 			submit: (result) => {
 				if (result !== "export") return;
-				const blob = new Blob([exportContent], { type: "text/plain" });
+				const blob = new Blob([exportContent], { type: "application/octet-stream" });
 				const blobUrl = URL.createObjectURL(blob);
 				const a = document.createElement("a");
 				a.href = blobUrl;
