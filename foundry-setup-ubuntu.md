@@ -130,7 +130,7 @@ You should see something like this:
 <img width="923" height="515" alt="image" src="https://github.com/user-attachments/assets/07424655-96e1-4c46-a6c4-c73b642b0cc6" />
 
 
-While this is up, open your browser and browse to http://<ipaddress>:30000 where "IPADDRESS" is the IP Address we got earlier using ifconfig\*\*.\*\*</ipaddress>
+While this is up, open your browser and browse to http://\<ipaddress\>:30000 where "IPADDRESS" is the IP Address we got earlier using ifconfig\*\*.\*\*</ipaddress>
 
 Foundry should load and ask you for a license. You can enter it now if you want, but you do not need to yet.
 
