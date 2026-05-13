@@ -25,7 +25,8 @@ Follow this guide to change the default password: https://help.ubuntu.com/stable
 
 Optimally, this will be a dedicated FoundryVTT server. We will not need to have it attached to a monitor/keyboard/mouse and we will not need to access it directly. I have mine sitting next to my Cable Modem connected directly to my router. So we will need access to SSH into it to install FoundryVTT, manually update it, restart FoundryVTT, or Reboot the system.
 
-**Note:** Commands below will be entered using Terminal.
+> [!NOTE]
+> Commands below will be entered using Terminal.
 
 Guide: https://www.cyberciti.biz/faq/how-to-install-ssh-on-ubuntu-linux-using-apt-get/
 
@@ -90,9 +91,10 @@ curl -sL https://deb.nodesource.com/setup_18.x | sudo bash -
 sudo apt install -y nodejs
 ```
 
-\*\*Note: \*\*If at this point you get an error that user is not in sudoers file, you will have to go back to the Ubuntu computer and enter the following command in the Terminal window:
-
-`usermod -aG sudo username`
+> [!NOTE]
+> If at this point you get an error that user is not in sudoers file, you will have to go back to the Ubuntu computer and enter the following command in the Terminal window:
+>
+> `usermod -aG sudo username`
 
 Now we will setup the directories for FoundryVTT
 
@@ -122,7 +124,10 @@ When the unzip finishes with no errors, delete the .zip file
 Go back to your home DIR  
 `cd ~`
 
-Now we will need to test that Foundry will run. Note that here I use the full path, you will need to modify this to fit your user home path.
+Now we will need to test that Foundry will run. 
+
+> [!NOTE]
+> Note that here I use the full path, you will need to modify this to fit your user home path.
 
 `node /home/<user>/foundryvtt/resources/app/main.js --dataPath=/home/<user>/foundrydata`
 
@@ -147,7 +152,10 @@ Once installed we will need to configure PM2 to startup on boot. Enter the follo
 
 `pm2 startup`
 
-Run the command provided (tip: in Putty if you highlight the command then right click on it, it will paste it into the command line).
+Run the command provided 
+
+> [!TIP]
+> In Putty if you highlight text, it auto copies to clipboard, and you can then right click to paste it into the command line.
 
 <img width="836" height="68" alt="image" src="https://github.com/user-attachments/assets/65925a54-559b-4c6a-9953-885375316d23" />
 
