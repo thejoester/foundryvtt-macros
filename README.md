@@ -8,7 +8,7 @@ Welcome to the foundryvtt-macros wiki!
 
 [**Advanced Pull to Scene**](https://github.com/thejoester/foundryvtt-macros/wiki/Advanced-Pull-to-Scene) - Select Scene from dropdown, select users, send to that scene.
 
-[**Bulk Set Scene config**](https://github.com/thejoester/foundryvtt-macros/wiki/Bulk-Set-Scene-Config) - Change scene configurations in bulk. 
+**Bulk Set Scene config** [**v13**](https://github.com/thejoester/foundryvtt-macros/wiki/Bulk-Set-Scene-Config-v13) [**v14**](https://github.com/thejoester/foundryvtt-macros/wiki/Bulk-Set-Scene-Config-v14) - Change scene configurations in bulk. 
 
 [**CSV to Roll Table**](https://github.com/thejoester/foundryvtt-macros/wiki/CSV-to-Roll-Table) - Upload a .csv file into a roll table
 
