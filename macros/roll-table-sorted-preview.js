@@ -10,6 +10,8 @@
 
 	Features:
 	- Prompts the user to select a RollTable from a dropdown list of all tables.
+		• Dropdown is grouped by folder, with "---- Folder Name ----" header rows.
+		• Long table names are truncated to 50 characters (full name on hover).
 	- Cleans up each entry by:
 		• Removing Foundry-style inline links (@UUID[…]{Label})
 		• Ignoring leading numeric prefixes (e.g., "01 Goblin" → "Goblin")
@@ -64,16 +66,49 @@ function extractEntryInfo(e) {
 	return { name, url };
 }
 
-// Build dropdown options
-const tableOptions = game.tables.map(t =>
-	`<option value="${t.uuid}">${t.name}</option>`
-).join("");
+// Build dropdown options grouped by folder (title = full name for hover; label truncated at 50 chars)
+const truncate = (str, max = 50) => (str.length > max ? `${str.slice(0, max)}...` : str);
+const NO_FOLDER = "(No Folder)";
+
+// Group tables by their immediate folder name
+const groups = new Map();
+for (const t of game.tables) {
+	const key = t.folder?.name ?? NO_FOLDER;
+	if (!groups.has(key)) groups.set(key, []);
+	groups.get(key).push(t);
+}
+
+// Foldered groups alphabetically, unfoldered tables last
+const byName = (a, b) => a.localeCompare(b, game.i18n.lang);
+const folderNames = Array.from(groups.keys()).sort((a, b) => {
+	if (a === NO_FOLDER) return 1;
+	if (b === NO_FOLDER) return -1;
+	return byName(a, b);
+});
+const hasFolders = folderNames.some(n => n !== NO_FOLDER);
+
+const tableOptions = folderNames.map(folderName => {
+	const opts = groups.get(folderName)
+		.sort((a, b) => byName(a.name, b.name))
+		.map(t => {
+			const full = foundry.utils.escapeHTML(t.name);
+			const label = foundry.utils.escapeHTML(truncate(t.name));
+			return `<option value="${t.uuid}" title="${full}">${label}</option>`;
+		}).join("");
+	// Show a header for real folders; only show the "(No Folder)" header when folders also exist
+	const showHeader = (folderName !== NO_FOLDER) || hasFolders;
+	const header = showHeader
+		? `<option disabled>---- ${foundry.utils.escapeHTML(folderName)} ----</option>`
+		: "";
+	return header + opts;
+}).join("");
 
 new foundry.applications.api.DialogV2({
 	window: { title: "Select RollTable to Preview" },
+	position: { width: 400 },
 	content: `
 		<label for="table">Choose a table:</label><br>
-		<select name="table" style="width: 100%; margin-top: 0.5em;">${tableOptions}</select>
+		<select name="table" style="width:100%; max-width:100%; box-sizing:border-box; margin-top:0.5em; text-overflow:ellipsis;">${tableOptions}</select>
 	`,
 	buttons: [{
 		action: "preview",
